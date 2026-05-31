@@ -157,7 +157,7 @@ section{position:relative;padding:clamp(90px,13vh,170px) clamp(20px,5vw,90px)}
 .stmt.right .stmt-en{margin-left:auto}
 .stmt-en .hi{color:var(--gold)}
 .stmt-kr-en{font-family:var(--kr);font-weight:500;color:var(--gold);font-size:clamp(15px,1.8vw,21px);margin-bottom:20px;letter-spacing:.01em}
-.stmt-body{font-size:clamp(15px,1.5vw,18.5px);line-height:2;color:var(--paper);opacity:.85;font-weight:300;max-width:50ch}
+.stmt-body{font-size:clamp(15px,1.5vw,18.5px);line-height:2;color:var(--paper);opacity:.85;font-weight:300;max-width:50ch;word-break:keep-all;overflow-wrap:break-word;text-wrap:pretty}
 .stmt.right .stmt-body{margin-left:auto}
 
 .mission{background:var(--navy-deep)}
@@ -214,7 +214,7 @@ section{position:relative;padding:clamp(90px,13vh,170px) clamp(20px,5vw,90px)}
 .belief .lead-line .g{color:var(--gold)}
 .creed{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:6px}
 .creed .ln{font-size:clamp(18px,2.5vw,30px);line-height:1.55;font-weight:300;color:rgba(241,242,241,.4);
-  transition:color .6s var(--ease);padding:8px 0}
+  transition:color .6s var(--ease);padding:8px 0;word-break:keep-all}
 .creed .ln.lit{color:var(--paper)}
 .creed .ln b{font-weight:700;color:var(--gold);display:inline-block;transition:transform .8s var(--ease)}
 .creed .ln:not(.lit) b{transform:translateY(10px) scale(.95)}
@@ -222,7 +222,7 @@ section{position:relative;padding:clamp(90px,13vh,170px) clamp(20px,5vw,90px)}
 .creed .ln:not(.lit) .arrow{transform:translateX(-14px);opacity:.15}
 .creed .ln.lit .arrow{animation:arrowpush 1.6s var(--ease) infinite}
 @keyframes arrowpush{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
-.creed .final{margin-top:46px;text-align:center;font-size:clamp(19px,2.7vw,32px);font-weight:500;color:var(--paper);line-height:1.5}
+.creed .final{margin-top:46px;text-align:center;font-size:clamp(19px,2.7vw,32px);font-weight:500;color:var(--paper);line-height:1.5;word-break:keep-all;text-wrap:pretty}
 .creed .final b{color:var(--gold);font-weight:700}
 
 /* ---------- CURRICULUM ---------- */
@@ -457,7 +457,7 @@ footer{background:var(--paper);color:var(--navy-ink);padding:clamp(60px,9vw,110p
       <div class="ln" data-creed>기술은 개인의 스펙을 넘어, <span class="arrow">→</span> <b>세상을 따뜻하게 만드는 섬김의 도구</b>이다.</div>
       <div class="ln" data-creed>균형은 적당한 타협을 넘어, <span class="arrow">→</span> <b>가치를 지키기 위한 치열한 선택</b>이다.</div>
       <div class="ln" data-creed>성장은 혼자만의 완성을 넘어, <span class="arrow">→</span> <b>공동체와 함께 일구는 혁신</b>이다.</div>
-      <div class="final reveal">그리고 WMS는 믿는다.<br/><b>아이 한 명이 하나님 안에서 자신의 길을 찾을 때,</b> 세상은 바뀐다는 것을.</div>
+      <div class="final reveal">그리고 WMS는 믿는다.<br/><b>아이 한 명이 하나님 안에서 자신의 길을 찾을 때,</b><br/>세상은 바뀐다는 것을.</div>
     </div>
   </section>
 
@@ -793,21 +793,24 @@ footer{background:var(--paper);color:var(--navy-ink);padding:clamp(60px,9vw,110p
     function recalc(){step=Math.max(20,Math.min(34,Math.round(stage.clientWidth/(letters.length+1))));}
     recalc();addEventListener('resize',recalc);
     if(reduced){
-      letters.forEach((s,i)=>{const x=i*step+stage.clientWidth*0.06;s.style.transform=`translate(${x}px,-50%)`;s.style.color=x>stage.clientWidth/2?'#FFC848':'rgba(241,242,241,.85)';});
+      const startX=Math.max(8,(stage.clientWidth-letters.length*step)/2);
+      letters.forEach((s,i)=>{const x=startX+i*step;s.style.transform=`translate(${x}px,-50%)`;s.style.color=x>stage.clientWidth/2?'#FFC848':'rgba(241,242,241,.85)';});
       return;
     }
-    let phase=0,last=null;
+    // 문장 전체가 하나의 덩어리로 왼→오 순서를 유지하며 담장을 넘는다
+    let phase=-letters.length*step,last=null;
     function frame(ts){
       if(last==null)last=ts;const dt=Math.min(0.05,(ts-last)/1000);last=ts;
-      const W=stage.clientWidth,wallX=W/2,total=Math.max(letters.length*step,W)+step*2,R=Math.min(118,W*0.3);
-      phase=(phase+dt*78)%total;
+      const W=stage.clientWidth,wallX=W/2,R=Math.min(120,W*0.3),textW=letters.length*step;
+      phase+=dt*92;
+      if(phase>W+step) phase=-textW;           // 완전히 오른쪽으로 나가면 다시 왼쪽에서 시작
       letters.forEach((s,i)=>{
-        const x=(i*step+phase)%total;
+        const x=phase+i*step;
         const d=Math.abs(x-wallX);
         const y=d<R?-78*(1-(d/R)*(d/R)):0;
         s.style.transform=`translate(${x.toFixed(1)}px,calc(-50% + ${y.toFixed(1)}px))`;
         s.style.color=x>wallX?'#FFC848':'rgba(241,242,241,.82)';
-        s.style.opacity=(x>W+step*0.5)?'0':'1';
+        s.style.opacity=(x<-step*1.2 || x>W+step*0.4)?'0':'1';
       });
       requestAnimationFrame(frame);
     }
