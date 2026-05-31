@@ -792,24 +792,25 @@ footer{background:var(--paper);color:var(--navy-ink);padding:clamp(60px,9vw,110p
     let step=28;
     function recalc(){step=Math.max(20,Math.min(34,Math.round(stage.clientWidth/(letters.length+1))));}
     recalc();addEventListener('resize',recalc);
+    const N=letters.length;
     if(reduced){
-      const startX=Math.max(8,(stage.clientWidth-letters.length*step)/2);
-      letters.forEach((s,i)=>{const x=startX+i*step;s.style.transform=`translate(${x}px,-50%)`;s.style.color=x>stage.clientWidth/2?'#FFC848':'rgba(241,242,241,.85)';});
+      const startX=Math.max(8,(stage.clientWidth-N*step)/2);
+      letters.forEach((s,i)=>{const x=startX+(N-1-i)*step;s.style.transform=`translate(${x}px,-50%)`;s.style.color=x<stage.clientWidth/2?'#FFC848':'rgba(241,242,241,.85)';});
       return;
     }
-    // 문장 전체가 하나의 덩어리로 왼→오 순서를 유지하며 담장을 넘는다
-    let phase=-letters.length*step,last=null;
+    // 배움(오른쪽) → 넘는다(왼쪽) 순서로, 문장 전체가 오른쪽에서 왼쪽으로 흐르며 담장을 넘는다
+    let phase=stage.clientWidth,last=null;
     function frame(ts){
       if(last==null)last=ts;const dt=Math.min(0.05,(ts-last)/1000);last=ts;
-      const W=stage.clientWidth,wallX=W/2,R=Math.min(120,W*0.3),textW=letters.length*step;
-      phase+=dt*92;
-      if(phase>W+step) phase=-textW;           // 완전히 오른쪽으로 나가면 다시 왼쪽에서 시작
+      const W=stage.clientWidth,wallX=W/2,R=Math.min(120,W*0.3),textW=N*step;
+      phase-=dt*92;
+      if(phase<-textW) phase=W;                 // 완전히 왼쪽으로 나가면 다시 오른쪽에서 시작
       letters.forEach((s,i)=>{
-        const x=phase+i*step;
+        const x=phase+(N-1-i)*step;             // i=0(배)=오른쪽, i=N-1(다)=왼쪽
         const d=Math.abs(x-wallX);
         const y=d<R?-78*(1-(d/R)*(d/R)):0;
         s.style.transform=`translate(${x.toFixed(1)}px,calc(-50% + ${y.toFixed(1)}px))`;
-        s.style.color=x>wallX?'#FFC848':'rgba(241,242,241,.82)';
+        s.style.color=x<wallX?'#FFC848':'rgba(241,242,241,.82)';   // 담장을 넘어간(왼쪽) 글자는 금색
         s.style.opacity=(x<-step*1.2 || x>W+step*0.4)?'0':'1';
       });
       requestAnimationFrame(frame);
